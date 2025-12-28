@@ -1,7 +1,11 @@
 [package]
 name = "painter"
+description = "A simple plotter library"
 version = "0.1.0"
+authors = ["tll tll53629581@gmail.com"]
+repository = "https://github.com/Tzlzl12/painter"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 # winit = "0.30.12"
