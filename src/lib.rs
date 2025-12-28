@@ -1,7 +1,7 @@
 mod axis;
 mod drawable;
 mod figure;
-mod line;
+pub mod primitive;
 
 pub use figure::Config;
 pub use figure::Figure;

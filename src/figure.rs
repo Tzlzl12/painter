@@ -1,10 +1,11 @@
-use std::{num::NonZeroU32, rc::Rc};
+use std::{num::NonZeroU32, ops::Index, rc::Rc};
 
 use winit::{
   application::ApplicationHandler,
   dpi::{LogicalSize, PhysicalSize},
   event::*,
   event_loop::{ActiveEventLoop, EventLoop},
+  keyboard::{KeyCode, PhysicalKey},
   window::Window,
 };
 
@@ -42,12 +43,14 @@ impl Default for Config {
 impl Figure {
   pub fn new(config: Config) -> Self {
     let (width, height) = config.size;
+    let mut axes = Vec::new();
+    axes.push(Axis::new(0., 0., (0., 0.)));
     Self {
       window: None,
       context: None,
       surface: None,
       pixmap: Pixmap::new(width, height).unwrap(),
-      axes: Vec::new(),
+      axes,
       config,
     }
   }
@@ -96,6 +99,15 @@ impl Figure {
   }
   pub fn add_subplot(&mut self, layout: (u32, u32)) {
     self.config.layout = layout;
+
+    let (rows, cols) = self.config.layout;
+
+    for _ in 0..rows * cols {
+      self.axes.push(Axis::new(0.0, 0.0, (0.0, 0.0)));
+    }
+  }
+  pub fn nth(&mut self, index: usize) -> Option<&mut Axis> {
+    self.axes.get_mut(index)
   }
 }
 
@@ -122,20 +134,18 @@ impl ApplicationHandler for Figure {
     let (total_w, total_h) = self.config.size;
     let each_w = (total_w / cols) as f32;
     let each_h = (total_h / rows) as f32;
-    let mut local_axes = Vec::<Axis>::with_capacity((rows * cols) as usize);
+
     for r in 0..rows {
       for c in 0..cols {
         // 计算每个子图的左上角坐标
         let x = c as f32 * each_w;
         let y = r as f32 * each_h;
-        // println!("add: x:{x}-each_w:{each_w} y:{y}-each_h:{each_h}");
-
-        local_axes.push(Axis::new(x, y, (each_w, each_h)));
+        self.axes[(r * rows + c) as usize].change_veiwport((x, y), (each_w, each_h));
+        // local_axes.push(Axis::new(x, y, (each_w, each_h)));
       }
     }
     let pixmap = Pixmap::new(total_w, total_h).unwrap();
     self.pixmap = pixmap;
-    self.axes = local_axes;
     self.window = Some(window);
     self.context = Some(context);
     self.surface = Some(surface);
@@ -194,6 +204,18 @@ impl ApplicationHandler for Figure {
         }
         self.resize(size)
       }
+      WindowEvent::KeyboardInput {
+        event:
+          KeyEvent {
+            physical_key: PhysicalKey::Code(code),
+            state: key_state,
+            ..
+          },
+        ..
+      } => match (code, key_state.is_pressed()) {
+        (KeyCode::Escape, true) => event_loop.exit(),
+        _ => {}
+      },
       _ => {}
     }
   }
