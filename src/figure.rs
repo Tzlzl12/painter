@@ -172,9 +172,10 @@ impl ApplicationHandler for Figure {
         // ================draw into pixmap====
 
         self.pixmap.fill(Color::from_rgba8(30, 30, 30, 255));
-
         // println!("axes num {}", self.axes.len());
-        for a in &self.axes {
+        //
+        // draw axes
+        for a in &mut self.axes {
           // println!("{} {} {:?}", a.x, a.y, a.veiwport);
           a.render(&mut self.pixmap);
         }
@@ -198,6 +199,7 @@ impl ApplicationHandler for Figure {
         }
         let _ = buffer.present();
       }
+      // ==========================================
       WindowEvent::Resized(size) => {
         if size.width == 0 || size.height == 0 {
           return;

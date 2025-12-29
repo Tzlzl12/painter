@@ -1,6 +1,7 @@
 use painter::{
   Config, Figure,
   primitive::{self, Curve},
+  utils,
 };
 
 fn main() {
@@ -8,17 +9,14 @@ fn main() {
 
   let mut curve = Curve::new("test".to_string(), primitive::Config::default());
 
-  let mut data = Vec::<(f32, f32)>::new();
-  for i in 0..100 {
-    let y = i as f32 * 2.5;
-    data.push((i as f32, y));
-  }
-  curve.add_data(data);
-
+  let t = utils::linspace(0., 6.28, 100);
+  let y: Vec<f32> = utils::sin(&t);
+  curve.add_data(&t, &y);
+  // println!("x: {:?} y: {:?}", t, y);
   let ax = figure.nth(0).unwrap();
   ax.add(Box::new(curve));
-  ax.set_x_limit((0., 110.));
-  ax.set_y_limit((0., 270.));
+  // ax.set_x_limit(Some((0., 7.)));
+  // ax.set_y_limit(Some((-1., 1.)));
 
   figure.show();
 }

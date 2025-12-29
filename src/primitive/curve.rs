@@ -1,12 +1,11 @@
-use std::sync::PoisonError;
-
 use tiny_skia::{Paint, PathBuilder, Point, Stroke, Transform};
 
-use crate::drawable::Drawable;
+use crate::drawable::{Bound, Drawable};
 
 pub struct Curve {
   name: String,
-  data: Vec<(f32, f32)>,
+  x: Vec<f32>,
+  y: Vec<f32>,
   config: Config,
 }
 
@@ -29,28 +28,34 @@ impl Curve {
   pub fn new(name: String, config: Config) -> Self {
     Self {
       name,
-      data: Vec::new(),
+      x: Vec::new(),
+      y: Vec::new(),
       config,
     }
   }
-  pub fn add_data(&mut self, data: Vec<(f32, f32)>) {
-    self.data.extend(data);
+  pub fn add_data(&mut self, x: &[f32], y: &[f32]) {
+    self.x.extend_from_slice(x);
+    self.y.extend_from_slice(y);
   }
 }
 
 impl Drawable for Curve {
   fn draw(&self, pixmap: &mut tiny_skia::Pixmap, ts: &Transform) {
-    if self.config.is_hidden || self.data.is_empty() {
+    if self.config.is_hidden || self.x.is_empty() || self.y.is_empty() {
       return;
     }
 
     let mut pb = PathBuilder::new();
 
-    for (i, &(x, y)) in self.data.iter().enumerate() {
-      if i == 0 {
-        pb.move_to(x, y);
+    let mut first = true;
+    for (&x, &y) in self.x.iter().zip(self.y.iter()) {
+      let mut p = Point::from_xy(x, y);
+      ts.map_point(&mut p);
+      if first {
+        pb.move_to(p.x, p.y);
+        first = false;
       } else {
-        pb.line_to(x, y);
+        pb.line_to(p.x, p.y);
       }
     }
 
@@ -64,11 +69,30 @@ impl Drawable for Curve {
       );
       paint.anti_alias = true;
 
+      let scale = ts.get_scale();
       let stroke = Stroke {
         width: self.config.stroke_width,
+        line_cap: tiny_skia::LineCap::Round,
+        line_join: tiny_skia::LineJoin::Round,
         ..Stroke::default()
       };
-      pixmap.stroke_path(&path, &paint, &stroke, *ts, None);
+      pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
     }
+  }
+  fn bound(&self) -> Option<Bound> {
+    if self.x.is_empty() || self.y.is_empty() {
+      return None;
+    }
+    let x_min = self.x.iter().fold(f32::INFINITY, |a, &b| a.min(b));
+    let x_max = self.x.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+    let y_min = self.y.iter().fold(f32::INFINITY, |a, &b| a.min(b));
+    let y_max = self.y.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+
+    Some(Bound {
+      x_min,
+      x_max,
+      y_min,
+      y_max,
+    })
   }
 }
