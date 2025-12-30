@@ -1,12 +1,15 @@
+use std::rc::Rc;
+
 use tiny_skia::{Paint, PathBuilder, Pixmap, Rect, Stroke, Transform};
 
-use crate::drawable::Drawable;
+use crate::{color, drawable::Drawable};
 
 pub struct Axis {
   pub x: f32,
   pub y: f32,
   pub veiwport: Rect,
-  drawables: Vec<Box<dyn Drawable>>,
+  color_index: usize,
+  drawables: Vec<Rc<dyn Drawable>>,
 
   config: Config,
 }
@@ -18,6 +21,7 @@ impl Axis {
       y,
       veiwport: Rect::from_xywh(0., 0., size.0, size.1).unwrap(),
       drawables: Vec::new(),
+      color_index: 0,
       config: Config::default(),
     }
   }
@@ -92,7 +96,8 @@ impl Axis {
     // 渲染
     let base_ts = Transform::from_translate(self.x, self.y);
     let mut paint = Paint::default();
-    paint.set_color_rgba8(200, 200, 200, 255);
+    let fg = color::get_fg();
+    paint.set_color_rgba8(fg[0], fg[1], fg[2], fg[3]);
     paint.anti_alias = true;
     let stroke = Stroke {
       width: 1.5,
@@ -163,21 +168,38 @@ impl Axis {
     let plot_w = width - 2. * margin;
     let plot_h = height - 2. * margin;
 
-    // 映射逻辑：
-    // 第一步：将数学点 (x, y) 平移到 (x - x_min, y - y_min)，使其从 0 开始
-    // 第二步：缩放，并将 Y 轴翻转（数学向上为正，屏幕向下为正）
-    // 第三步：平移到屏幕上的绘图起始点 (margin, height - margin)
-    let inner_ts = Transform::from_translate(margin, height - margin)
-      .pre_scale(plot_w / x_range, -plot_h / y_range)
+    // 1. 计算比例
+    let px_per_unit_x = plot_w / x_range;
+    let px_per_unit_y = plot_h / y_range;
+    let scale = px_per_unit_x.min(px_per_unit_y);
+
+    // 2. 【核心修改】计算偏移量以实现居中
+    // 剩余的宽度 / 2 = 左侧额外需要的位移
+    let x_offset = (plot_w - (x_range * scale)) / 2.0;
+    // 剩余的高度 / 2 = 底部额外需要的位移（向上提）
+    let y_offset = (plot_h - (y_range * scale)) / 2.0;
+
+    // 3. 应用变换
+    // margin + x_offset 让图形横向居中
+    // height - (margin + y_offset) 让图形纵向居中
+    let inner_ts = Transform::from_translate(margin + x_offset, height - (margin + y_offset))
+      .pre_scale(scale, -scale)
       .pre_translate(-x_min, -y_min);
 
     let ts = base_ts.pre_concat(inner_ts);
 
+    // ... 剩下的遍历绘制逻辑 ...
     for drawable in &self.drawables {
+      // 颜色分配逻辑保持不变
+      if drawable.get_color() == [255, 255, 255, 255] {
+        let color = color::get_color(self.color_index & 7);
+        self.color_index += 1;
+        drawable.set_color(color);
+      }
       drawable.draw(pixmap, &ts);
     }
   }
-  pub fn add(&mut self, drawable: Box<dyn Drawable>) {
+  pub fn add(&mut self, drawable: Rc<dyn Drawable>) {
     self.drawables.push(drawable);
   }
 }
