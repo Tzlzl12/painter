@@ -1,4 +1,5 @@
 mod axis;
+mod color;
 mod drawable;
 mod figure;
 pub mod primitive;

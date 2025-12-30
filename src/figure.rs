@@ -1,4 +1,4 @@
-use std::{num::NonZeroU32, ops::Index, rc::Rc};
+use std::{num::NonZeroU32, rc::Rc};
 
 use winit::{
   application::ApplicationHandler,
@@ -13,7 +13,7 @@ use tiny_skia::{Color, Pixmap};
 
 use softbuffer::{Context, Surface};
 
-use crate::axis::Axis;
+use crate::{axis::Axis, color};
 
 pub struct Figure {
   window: Option<Rc<Window>>,
@@ -111,6 +111,7 @@ impl Figure {
   }
 }
 
+/// ===========Window Handler==============
 impl ApplicationHandler for Figure {
   fn resumed(&mut self, event_loop: &ActiveEventLoop) {
     let config = &mut self.config;
@@ -171,8 +172,10 @@ impl ApplicationHandler for Figure {
 
         // ================draw into pixmap====
 
-        self.pixmap.fill(Color::from_rgba8(30, 30, 30, 255));
-        // println!("axes num {}", self.axes.len());
+        let bg = color::get_bg();
+        self
+          .pixmap
+          .fill(Color::from_rgba8(bg[0], bg[1], bg[2], bg[3]));
         //
         // draw axes
         for a in &mut self.axes {
