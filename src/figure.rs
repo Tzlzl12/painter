@@ -116,40 +116,43 @@ impl ApplicationHandler for Figure {
   fn resumed(&mut self, event_loop: &ActiveEventLoop) {
     let config = &mut self.config;
 
-    let attr = Window::default_attributes()
-      .with_title(&config.title)
-      .with_inner_size(LogicalSize::new(config.size.0 as f64, config.size.1 as f64));
-    let window = Rc::new(event_loop.create_window(attr).unwrap());
+    let window: Rc<Window>;
+    if self.window.is_none() {
+      let attr = Window::default_attributes()
+        .with_title(&config.title)
+        .with_inner_size(LogicalSize::new(config.size.0 as f64, config.size.1 as f64));
+      window = Rc::new(event_loop.create_window(attr).unwrap());
 
-    // Context 需要一个 HasDisplayHandle。Rc<Window> 满足要求。
-    let context = Context::new(window.clone()).expect("Failed to create context");
+      // Context 需要一个 HasDisplayHandle。Rc<Window> 满足要求。
+      let context = Context::new(window.clone()).expect("Failed to create context");
 
-    // Surface 需要 Context 的引用，以及一个 HasWindowHandle。
-    // 这里第二个参数也传入 window.clone()。
-    let surface = Surface::new(&context, window.clone()).expect("Failed to create surface");
-    let size = window.as_ref().inner_size();
-    self.config.size = (size.width, size.height);
+      // Surface 需要 Context 的引用，以及一个 HasWindowHandle。
+      // 这里第二个参数也传入 window.clone()。
+      let surface = Surface::new(&context, window.clone()).expect("Failed to create surface");
+      let size = window.as_ref().inner_size();
+      self.config.size = (size.width, size.height);
 
-    // if have subplot, create axes, if not, create one
-    let (rows, cols) = self.config.layout;
-    let (total_w, total_h) = self.config.size;
-    let each_w = (total_w / cols) as f32;
-    let each_h = (total_h / rows) as f32;
+      // if have subplot, create axes, if not, create one
+      let (rows, cols) = self.config.layout;
+      let (total_w, total_h) = self.config.size;
+      let each_w = (total_w / cols) as f32;
+      let each_h = (total_h / rows) as f32;
 
-    for r in 0..rows {
-      for c in 0..cols {
-        // 计算每个子图的左上角坐标
-        let x = c as f32 * each_w;
-        let y = r as f32 * each_h;
-        self.axes[(r * rows + c) as usize].change_veiwport((x, y), (each_w, each_h));
-        // local_axes.push(Axis::new(x, y, (each_w, each_h)));
+      for r in 0..rows {
+        for c in 0..cols {
+          // 计算每个子图的左上角坐标
+          let x = c as f32 * each_w;
+          let y = r as f32 * each_h;
+          self.axes[(r * rows + c) as usize].change_veiwport((x, y), (each_w, each_h));
+          // local_axes.push(Axis::new(x, y, (each_w, each_h)));
+        }
       }
+      let pixmap = Pixmap::new(total_w, total_h).unwrap();
+      self.pixmap = pixmap;
+      self.window = Some(window);
+      self.context = Some(context);
+      self.surface = Some(surface);
     }
-    let pixmap = Pixmap::new(total_w, total_h).unwrap();
-    self.pixmap = pixmap;
-    self.window = Some(window);
-    self.context = Some(context);
-    self.surface = Some(surface);
   }
 
   fn window_event(
