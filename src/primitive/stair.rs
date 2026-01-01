@@ -5,8 +5,15 @@ use crate::{
 use std::cell::RefCell;
 
 use tiny_skia::{Paint, PathBuilder, Pixmap, Point, Stroke, Transform};
+use winit::event::ElementState;
+pub enum StairStyle {
+  trace_x,
+  trace_y,
+  histogram,
+}
 pub struct Stair {
   name: String,
+  stair_style: RefCell<StairStyle>,
   x: RefCell<Vec<f32>>,
   y: RefCell<Vec<f32>>,
   config: RefCell<Config>,
@@ -19,12 +26,16 @@ impl Stair {
       x: RefCell::new(Vec::new()),
       y: RefCell::new(Vec::new()),
       config: RefCell::new(config),
+      stair_style: RefCell::new(StairStyle::trace_x),
     }
   }
 
   fn _add_data(&self, x: &[f32], y: &[f32]) {
     self.x.borrow_mut().extend_from_slice(x);
     self.y.borrow_mut().extend_from_slice(y);
+  }
+  pub fn set_style(&self, style: StairStyle) {
+    *self.stair_style.borrow_mut() = style;
   }
   pub fn set_data(&self, x: &[f32], y: &[f32]) {
     self.x.borrow_mut().clear();
@@ -50,15 +61,44 @@ impl Drawable for Stair {
 
     // 2. 遍历后续点，手动映射并构建阶梯
     for i in 0..x_vec.len() - 1 {
-      // 计算拐角点 (x_next, y_current) 并映射
-      let mut p_corner = Point::from_xy(x_vec[i + 1], y_vec[i]);
-      ts.map_point(&mut p_corner);
-      pb.line_to(p_corner.x, p_corner.y);
+      match *self.stair_style.borrow() {
+        StairStyle::trace_x => {
+          // (x_i, y_i) -> (x_i+1, y_i) -> (x_i+1, y_i+1)
+          let mut p_corner = Point::from_xy(x_vec[i + 1], y_vec[i]);
+          ts.map_point(&mut p_corner);
+          pb.line_to(p_corner.x, p_corner.y);
 
-      // 计算下一个目标点 (x_next, y_next) 并映射
-      let mut p_next = Point::from_xy(x_vec[i + 1], y_vec[i + 1]);
-      ts.map_point(&mut p_next);
-      pb.line_to(p_next.x, p_next.y);
+          let mut p_next = Point::from_xy(x_vec[i + 1], y_vec[i + 1]);
+          ts.map_point(&mut p_next);
+          pb.line_to(p_next.x, p_next.y);
+        }
+        StairStyle::trace_y => {
+          // (x_i, y_i) -> (x_i, y_i+1) -> (x_i+1, y_i+1)
+          let mut p_corner = Point::from_xy(x_vec[i], y_vec[i + 1]);
+          ts.map_point(&mut p_corner);
+          pb.line_to(p_corner.x, p_corner.y);
+
+          let mut p_next = Point::from_xy(x_vec[i + 1], y_vec[i + 1]);
+          ts.map_point(&mut p_next);
+          pb.line_to(p_next.x, p_next.y);
+        }
+        StairStyle::histogram => {
+          let mid_x = (x_vec[i] + x_vec[i + 1]) / 2.0;
+
+          // (x_i, y_i) -> (mid_x, y_i) -> (mid_x, y_i+1) -> (x_i+1, y_i+1)
+          let mut p1 = Point::from_xy(mid_x, y_vec[i]);
+          ts.map_point(&mut p1);
+          pb.line_to(p1.x, p1.y);
+
+          let mut p2 = Point::from_xy(mid_x, y_vec[i + 1]);
+          ts.map_point(&mut p2);
+          pb.line_to(p2.x, p2.y);
+
+          let mut p_next = Point::from_xy(x_vec[i + 1], y_vec[i + 1]);
+          ts.map_point(&mut p_next);
+          pb.line_to(p_next.x, p_next.y);
+        }
+      }
     }
 
     if let Some(path) = pb.finish() {
