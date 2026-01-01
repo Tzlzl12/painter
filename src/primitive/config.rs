@@ -7,7 +7,7 @@ impl Default for Config {
   fn default() -> Self {
     Self {
       is_hidden: false,
-      color: [255, 255, 255, 255],
+      color: [0, 0, 0, 0],
       stroke_width: 2.0,
     }
   }
