@@ -14,7 +14,7 @@ fn main() {
   // 线 1: 函数生成
   let curve1 = Rc::new(Curve::new("Sine".to_string(), primitive::Config::default()));
   let x = utils::linspace(0.0, 6.28, 100);
-  curve1.set_fn(&x, |v| v.sin());
+  curve1.set_fn(&x, |v| 3. * v.sin());
   ax.add(curve1);
 
   // 线 2: 参数方程
