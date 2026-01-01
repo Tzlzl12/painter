@@ -1,5 +1,3 @@
-use std::sync::atomic::AtomicU8;
-
 // 格式为 [R, G, B, A]
 const BG: [u8; 4] = [40, 44, 52, 255]; // #282c34
 const FG: [u8; 4] = [171, 178, 191, 255]; // #abb2bf
@@ -12,10 +10,19 @@ const BLUE: [u8; 4] = [97, 175, 239, 255]; // #61afef
 const PURPLE: [u8; 4] = [198, 120, 221, 255]; // #c678dd
 const WHITE: [u8; 4] = [171, 178, 191, 255]; // #abb2bf
 const BLACK: [u8; 4] = [40, 44, 52, 255]; // #282c34
-const GRAY: [u8; 4] = [92, 99, 112, 255]; // #5c6370
+const GRAY: [u8; 4] = [92, 99, 112, 80]; // #5c6370
 
 // Color palette
-const COLOR_PALETTE: [[u8; 4]; 8] = [RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, GRAY];
+const COLOR_PALETTE: [[u8; 4]; 8] = [
+  RED,    // 0: 红色（极暖）
+  BLUE,   // 1: 蓝色（极冷，与红对比最强）
+  GREEN,  // 2: 绿色（中间色，与蓝红都有区分）
+  PURPLE, // 3: 紫色（深冷）
+  ORANGE, // 4: 橙色（明亮暖色）
+  CYAN,   // 5: 青色（明亮冷色）
+  YELLOW, // 6: 黄色（高亮暖色）
+  GRAY,   // 7: 灰色
+];
 
 pub fn get_color(index: usize) -> [u8; 4] {
   COLOR_PALETTE[index as usize]
