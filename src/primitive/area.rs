@@ -41,6 +41,23 @@ impl Area {
     self.y_value.borrow_mut().clear();
     self._add_data(x, y);
   }
+  pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
+    let mut x_edge = self.x_edge.borrow_mut();
+    let mut y_value = self.y_value.borrow_mut();
+
+    // 1. 更新 Y 值
+    *y_value = y.to_vec();
+
+    // 2. 生成 X 边缘：从 x_start 开始，步长为 step，生成 y.len() + 1 个点
+    let n = y.len();
+    *x_edge = (0..=n).map(|i| x_start + i as f32 * step).collect();
+  }
+  pub fn set_data_with_step(&self, y: &[f32], x_start: f32, step: f32) {
+    self.set_data_prototype(y, x_start, step);
+  }
+  pub fn set_data_norm(&self, y: &[f32]) {
+    self.set_data_prototype(y, 0.0, 1.0);
+  }
 }
 
 impl Drawable for Area {
