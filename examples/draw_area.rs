@@ -18,9 +18,12 @@ fn main() {
   his.set_data(&x, &y);
   let his1 = Rc::new(Area::new("test1".to_string(), primitive::Config::default()));
 
-  his1.set_data(&x, &y1);
-  let his2 = Rc::new(Area::new("test2".to_string(), primitive::Config::default()));
-  his2.set_data(&x, &y2);
+  his1.set_data_norm(&y1);
+
+  let mut area = Area::new("test2".to_string(), primitive::Config::default());
+  area.area_type = AreaType::Line;
+  let his2 = Rc::new(area);
+  his2.set_data(&x, &[1., 4., 3., 7., 2., 7.]);
 
   let ax = figure.nth(0).unwrap();
 
