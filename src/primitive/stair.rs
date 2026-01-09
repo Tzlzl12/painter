@@ -5,11 +5,10 @@ use crate::{
 use std::cell::RefCell;
 
 use tiny_skia::{Paint, PathBuilder, Pixmap, Point, Stroke, Transform};
-use winit::event::ElementState;
 pub enum StairStyle {
-  trace_x,
-  trace_y,
-  histogram,
+  TraceX,
+  TraceY,
+  Histogram,
 }
 pub struct Stair {
   name: String,
@@ -26,7 +25,7 @@ impl Stair {
       x: RefCell::new(Vec::new()),
       y: RefCell::new(Vec::new()),
       config: RefCell::new(config),
-      stair_style: RefCell::new(StairStyle::trace_x),
+      stair_style: RefCell::new(StairStyle::TraceX),
     }
   }
 
@@ -62,7 +61,7 @@ impl Drawable for Stair {
     // 2. 遍历后续点，手动映射并构建阶梯
     for i in 0..x_vec.len() - 1 {
       match *self.stair_style.borrow() {
-        StairStyle::trace_x => {
+        StairStyle::TraceX => {
           // (x_i, y_i) -> (x_i+1, y_i) -> (x_i+1, y_i+1)
           let mut p_corner = Point::from_xy(x_vec[i + 1], y_vec[i]);
           ts.map_point(&mut p_corner);
@@ -72,7 +71,7 @@ impl Drawable for Stair {
           ts.map_point(&mut p_next);
           pb.line_to(p_next.x, p_next.y);
         }
-        StairStyle::trace_y => {
+        StairStyle::TraceY => {
           // (x_i, y_i) -> (x_i, y_i+1) -> (x_i+1, y_i+1)
           let mut p_corner = Point::from_xy(x_vec[i], y_vec[i + 1]);
           ts.map_point(&mut p_corner);
@@ -82,7 +81,7 @@ impl Drawable for Stair {
           ts.map_point(&mut p_next);
           pb.line_to(p_next.x, p_next.y);
         }
-        StairStyle::histogram => {
+        StairStyle::Histogram => {
           let mid_x = (x_vec[i] + x_vec[i + 1]) / 2.0;
 
           // (x_i, y_i) -> (mid_x, y_i) -> (mid_x, y_i+1) -> (x_i+1, y_i+1)
@@ -141,6 +140,9 @@ impl Drawable for Stair {
       y_min,
       y_max,
     })
+  }
+  fn name(&self) -> String {
+    self.name.clone()
   }
   fn get_color(&self) -> [u8; 4] {
     self.config.borrow().color

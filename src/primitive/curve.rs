@@ -29,28 +29,16 @@ impl Curve {
     self._add_data(x, y);
   }
   pub fn set_data(&self, x: &[f32], y: &[f32]) {
-    self.x.borrow_mut().clear();
-    self.y.borrow_mut().clear();
-    self._add_data(x, y);
+    self.x.replace(x.to_vec());
+    self.y.replace(y.to_vec());
   }
   pub fn set_fn(&self, x: &[f32], f: impl Fn(f32) -> f32) {
-    let mut x_vec = self.x.borrow_mut();
-    let mut y_vec = self.y.borrow_mut();
-
-    x_vec.clear();
-    y_vec.clear();
-
-    x_vec.extend_from_slice(x);
-    y_vec.extend(x.iter().map(|&v| f(v)));
+    self.x.replace(x.to_vec());
+    self.y.replace(x.iter().map(|&v| f(v)).collect());
   }
   pub fn set_parametric(&self, t: &[f32], fx: impl Fn(f32) -> f32, fy: impl Fn(f32) -> f32) {
-    let mut x_vec = self.x.borrow_mut();
-    let mut y_vec = self.y.borrow_mut();
-    x_vec.clear();
-    y_vec.clear();
-
-    x_vec.extend(t.iter().map(|&v| fx(v)));
-    y_vec.extend(t.iter().map(|&v| fy(v)));
+    self.x.replace(t.iter().map(|&v| fx(v)).collect());
+    self.y.replace(t.iter().map(|&v| fy(v)).collect());
   }
 }
 
@@ -62,16 +50,15 @@ impl Drawable for Curve {
     }
 
     let mut pb = PathBuilder::new();
+    let x_ref = self.x.borrow();
+    let y_ref = self.y.borrow();
 
-    let mut first = true;
-    for (&x, &y) in self.x.borrow().iter().zip(self.y.borrow().iter()) {
-      let mut p = Point::from_xy(x, y);
-      ts.map_point(&mut p);
-      if first {
-        pb.move_to(p.x, p.y);
-        first = false;
+    // 1. 直接使用原始数据坐标（逻辑坐标）
+    for i in 0..x_ref.len() {
+      if i == 0 {
+        pb.move_to(x_ref[i], y_ref[i]);
       } else {
-        pb.line_to(p.x, p.y);
+        pb.line_to(x_ref[i], y_ref[i]);
       }
     }
 
@@ -85,14 +72,18 @@ impl Drawable for Curve {
       );
       paint.anti_alias = true;
 
-      let scale = ts.get_scale();
+      // 2. 修正后的线宽计算：确保在屏幕上显示的是 config 定义的像素宽度
+      // Transform 的 sy 通常是负数（翻转了），所以取绝对值
+      let sy = ts.sy.abs();
       let stroke = Stroke {
-        width: config.stroke_width,
+        width: config.stroke_width / sy, // 抵消变换带来的缩放
         line_cap: tiny_skia::LineCap::Round,
         line_join: tiny_skia::LineJoin::Round,
         ..Stroke::default()
       };
-      pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+
+      // 3. 关键：传入 ts。这样曲线和轴线共享同一个数学空间，绝对对齐
+      pixmap.stroke_path(&path, &paint, &stroke, *ts, None);
     }
   }
   fn bound(&self) -> Option<Bound> {
@@ -118,6 +109,9 @@ impl Drawable for Curve {
       y_min,
       y_max,
     })
+  }
+  fn name(&self) -> String {
+    self.name.clone()
   }
   fn get_color(&self) -> [u8; 4] {
     self.config.borrow().color

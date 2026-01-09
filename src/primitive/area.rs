@@ -33,24 +33,22 @@ impl Area {
     }
   }
   fn _add_data(&self, x: &[f32], y: &[f32]) {
+    if x.len() != y.len() {
+      return;
+    }
     self.x_edge.borrow_mut().extend_from_slice(x);
     self.y_value.borrow_mut().extend_from_slice(y);
   }
   pub fn set_data(&self, x: &[f32], y: &[f32]) {
-    self.x_edge.borrow_mut().clear();
-    self.y_value.borrow_mut().clear();
-    self._add_data(x, y);
+    self.x_edge.replace(x.to_vec());
+    self.y_value.replace(y.to_vec());
   }
   pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
-    let mut x_edge = self.x_edge.borrow_mut();
-    let mut y_value = self.y_value.borrow_mut();
-
-    // 1. 更新 Y 值
-    *y_value = y.to_vec();
-
-    // 2. 生成 X 边缘：从 x_start 开始，步长为 step，生成 y.len() + 1 个点
     let n = y.len();
-    *x_edge = (0..=n).map(|i| x_start + i as f32 * step).collect();
+    self
+      .x_edge
+      .replace((0..=n).map(|i| x_start + i as f32 * step).collect());
+    self.y_value.replace(y.to_vec());
   }
   pub fn set_data_with_step(&self, y: &[f32], x_start: f32, step: f32) {
     self.set_data_prototype(y, x_start, step);
@@ -188,6 +186,9 @@ impl Drawable for Area {
       y_min,
       y_max,
     })
+  }
+  fn name(&self) -> String {
+    self.name.clone()
   }
   fn get_color(&self) -> [u8; 4] {
     self.config.borrow().color

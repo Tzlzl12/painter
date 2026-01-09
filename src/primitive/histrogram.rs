@@ -246,6 +246,9 @@ impl Drawable for Histrogram {
       y_max,
     })
   }
+  fn name(&self) -> String {
+    self.name.clone()
+  }
   /// not used in this primitive
   fn get_color(&self) -> [u8; 4] {
     [255, 255, 255, 255]
