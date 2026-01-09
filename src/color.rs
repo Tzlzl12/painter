@@ -10,7 +10,7 @@ const BLUE: [u8; 4] = [97, 175, 239, 255]; // #61afef
 const PURPLE: [u8; 4] = [198, 120, 221, 255]; // #c678dd
 const WHITE: [u8; 4] = [171, 178, 191, 255]; // #abb2bf
 const BLACK: [u8; 4] = [40, 44, 52, 255]; // #282c34
-const GRAY: [u8; 4] = [92, 99, 112, 80]; // #5c6370
+const GRAY: [u8; 4] = [92, 99, 112, 125]; // #5c6370
 
 // Color palette
 const COLOR_PALETTE: [[u8; 4]; 8] = [
@@ -21,7 +21,7 @@ const COLOR_PALETTE: [[u8; 4]; 8] = [
   ORANGE, // 4: 橙色（明亮暖色）
   CYAN,   // 5: 青色（明亮冷色）
   YELLOW, // 6: 黄色（高亮暖色）
-  GRAY,   // 7: 灰色
+  BLACK,  // 7: 灰色
 ];
 
 pub fn get_color(index: usize) -> [u8; 4] {
@@ -32,4 +32,8 @@ pub fn get_bg() -> [u8; 4] {
 }
 pub fn get_fg() -> [u8; 4] {
   FG
+}
+
+pub fn get_gray() -> [u8; 4] {
+  GRAY
 }

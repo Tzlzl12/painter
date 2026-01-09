@@ -9,6 +9,7 @@ pub struct Bound {
 pub trait Drawable {
   fn draw(&self, pixmap: &mut Pixmap, ts: &Transform);
   fn bound(&self) -> Option<Bound>;
+  fn name(&self) -> String;
   fn get_color(&self) -> [u8; 4];
   fn set_color(&self, color: [u8; 4]);
 }
