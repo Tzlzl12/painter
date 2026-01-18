@@ -47,18 +47,18 @@ impl Histrogram {
   }
   pub fn set_x(&self, x: &[f32]) {
     let mut x_vec = self.x.borrow_mut();
-    let final_limit = x.len();
+    let limit = x.len();
     x_vec.clear();
     x_vec.extend_from_slice(x);
 
     if self.bars.borrow().is_empty() {
-      self.resize(final_limit);
+      self.resize(limit);
     }
   }
   pub fn set_data(&self, y: &[f32]) {
     let mut bars_vec = self.bars.borrow_mut();
 
-    // 自动选择颜色
+    // auto choose color
     let color = color::get_color(self.color_index.get());
     let index = self.color_index.get();
     self.color_index.set((index + 1) & 7);
@@ -67,12 +67,12 @@ impl Histrogram {
       color,
       ..Config::default()
     };
-    //
-    //
+    // get the value based on the max_len(x)
     let valid_value: Vec<f32> = y.iter().take(self.max_len()).cloned().collect();
     let bar = Bars::new(valid_value, config);
     bars_vec.push(bar);
   }
+  // althougn the function is supported, but not recommended to use it
   pub fn add_data(&self, index: usize, y: &[f32]) {
     let mut bars_vec = self.bars.borrow_mut();
     if let Some(bar) = bars_vec.get_mut(index) {
@@ -89,9 +89,9 @@ impl Histrogram {
     let mut bars_vec = self.bars.borrow_mut();
     if let Some(bar) = bars_vec.get_mut(index) {
       let limit = self.max_len();
+      let new_y: Vec<f32> = y.iter().take(limit).cloned().collect();
       bar.y.clear();
-
-      bar.y.extend(y.iter().take(limit));
+      bar.y.extend(new_y);
     }
   }
   pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
@@ -100,7 +100,7 @@ impl Histrogram {
       return;
     }
 
-    // 1. 如果 X 轴是空的，初始化它
+    // if the x is not set, set it first
     let mut x_vec = self.x.borrow_mut();
     if x_vec.is_empty() {
       let mut new_x = Vec::with_capacity(n + 1);
@@ -108,27 +108,29 @@ impl Histrogram {
         new_x.push(x_start + i as f32 * step);
       }
       *x_vec = new_x;
+
+      // get the max bins
+      let limit = x_vec.len().saturating_sub(1);
+
+      // auto set color
+      let idx = self.color_index.get();
+      let color = color::get_color(idx);
+      self.color_index.set((idx + 1) & 7);
+
+      let config = Config {
+        color,
+        ..Config::default()
+      };
+
+      // to the same length as x bins
+      let final_y = y.iter().take(limit).cloned().collect::<Vec<f32>>();
+      self.bars.borrow_mut().push(Bars::new(final_y, config));
+    } else {
+      // drop x reference, to avoid set_data() use it
+      drop(x_vec);
+      // if have x, just set data
+      self.set_data(y);
     }
-
-    // 2. 获取当前 X 轴允许的最大槽位数 (Bins)
-    let limit = x_vec.len().saturating_sub(1);
-
-    // 3. 准备新序列的配置 (使用 Cell 递增颜色)
-    let idx = self.color_index.get();
-    let color = color::get_color(idx);
-    self.color_index.set((idx + 1) & 7);
-
-    let config = Config {
-      color,
-      ..Config::default()
-    };
-
-    // 4. 将数据裁剪或补齐到与当前 X 轴一致的长度
-    let mut final_y = y.to_vec();
-    final_y.resize(limit, 0.0); // 多了截断，少了补 0.0
-
-    // 5. 存入 bars
-    self.bars.borrow_mut().push(Bars::new(final_y, config));
   }
   pub fn set_data_with_step(&self, y: &[f32], step: f32) {
     self.set_data_prototype(y, 0., step);

@@ -40,11 +40,17 @@ impl Area {
     self.y_value.borrow_mut().extend_from_slice(y);
   }
   pub fn set_data(&self, x: &[f32], y: &[f32]) {
+    if x.len() != y.len() - 1 {
+      println!("make sure x length is less 1 then y length");
+    }
     self.x_edge.replace(x.to_vec());
     self.y_value.replace(y.to_vec());
   }
   pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
     let n = y.len();
+    if n == 0 {
+      return;
+    }
     self
       .x_edge
       .replace((0..=n).map(|i| x_start + i as f32 * step).collect());
@@ -63,7 +69,6 @@ impl Drawable for Area {
     let x_vec = self.x_edge.borrow();
     let y_vec = self.y_value.borrow();
 
-    // 基础防御：如果没有数据点，直接返回
     if x_vec.is_empty() {
       return;
     }

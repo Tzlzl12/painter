@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use tiny_skia::{Paint, PathBuilder, Point, Stroke, Transform};
+use tiny_skia::{Paint, PathBuilder, Stroke, Transform};
 
 use super::config::Config;
 use crate::drawable::{Bound, Drawable};
