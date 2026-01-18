@@ -11,12 +11,6 @@ fn main() {
   figure.add_subplot((1, 1));
   let ax = figure.nth(0).unwrap();
 
-  // 线 1: 函数生成
-  let curve1 = Rc::new(Curve::new("Sine".to_string(), primitive::Config::default()));
-  let x = utils::linspace(0.0, 6.28, 100);
-  curve1.set_fn(&x, |v| 3. * v.sin());
-  ax.add(curve1);
-
   // 线 2: 参数方程
   let curve2 = Rc::new(Curve::new(
     "Circle".to_string(),
@@ -25,6 +19,11 @@ fn main() {
   let t = utils::linspace(0.0, 6.28, 100);
   curve2.set_parametric(&t, |v| v.cos(), |v| v.sin());
   ax.add(curve2);
+  // 线 1: 函数生成
+  let curve1 = Rc::new(Curve::new("Sine".to_string(), primitive::Config::default()));
+  let x = utils::linspace(3.14, 6.28, 100);
+  curve1.set_fn(&x, |v| 3. * v.sin());
+  ax.add(curve1);
 
   // 线 3: 直接喂数据
   let curve3 = Rc::new(Curve::new("Data".to_string(), primitive::Config::default()));

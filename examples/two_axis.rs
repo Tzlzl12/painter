@@ -1,3 +1,4 @@
+use core::f32;
 use std::{rc::Rc, thread::yield_now};
 
 use painter::{
@@ -17,7 +18,7 @@ fn main() {
   let y = utils::sin(&t);
   c.set_data(&t, &y);
 
-  c1.set_fn(&t, |v| v - 3.14);
+  c1.set_fn(&t, |v| v - f32::consts::PI);
   let ax1 = figure.nth(0).unwrap();
   ax1.add(Rc::new(c));
   ax1.add(Rc::new(c1));
