@@ -8,7 +8,7 @@ const GREEN: [u8; 4] = [152, 195, 121, 255]; // #98c379
 const CYAN: [u8; 4] = [86, 182, 194, 255]; // #56b6c2
 const BLUE: [u8; 4] = [97, 175, 239, 255]; // #61afef
 const PURPLE: [u8; 4] = [198, 120, 221, 255]; // #c678dd
-const WHITE: [u8; 4] = [171, 178, 191, 255]; // #abb2bf
+const _WHITE: [u8; 4] = [171, 178, 191, 255]; // #abb2bf is same as FG
 const BLACK: [u8; 4] = [40, 44, 52, 255]; // #282c34
 const GRAY: [u8; 4] = [92, 99, 112, 125]; // #5c6370
 
