@@ -146,7 +146,7 @@ impl Drawable for Scatter {
       paint.set_color_rgba8(r, g, b, a);
       ts.map_point(&mut center);
 
-      let radius = (values[i] / mean).max(6.).min(1.) * RADIUS;
+      let radius = (values[i] / mean).clamp(1., 6.) * RADIUS;
 
       // 简单圆形散点
       if let Some(circle) = PathBuilder::from_circle(center.x, center.y, radius) {

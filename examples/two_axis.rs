@@ -1,5 +1,5 @@
 use core::f32;
-use std::{rc::Rc, thread::yield_now};
+use std::rc::Rc;
 
 use painter::{
   Config, Figure,

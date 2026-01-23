@@ -170,12 +170,12 @@ impl Drawable for ErrorBar {
       x_max = x_max.max(bar.max);
     }
 
-    return Some(Bound {
+    Some(Bound {
       x_min,
       x_max,
       y_min,
       y_max,
-    });
+    })
   }
   fn name(&self) -> String {
     self.name.clone()
