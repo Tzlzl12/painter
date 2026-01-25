@@ -11,7 +11,7 @@ impl TextRender {
   pub fn new() -> Self {
     let mut db = Database::new();
     db.load_system_fonts();
-    let source = include_bytes!("./maple.ttf");
+    let source = include_bytes!("maple.ttf");
     let font = FontVec::try_from_vec(source.to_vec()).unwrap();
     Self { font, db }
   }
@@ -115,7 +115,7 @@ impl TextRender {
 
 impl TextRender {
   fn load_default_font(&mut self) {
-    let source = include_bytes!("./maple.ttf");
+    let source = include_bytes!("maple.ttf");
     match FontVec::try_from_vec(source.to_vec()) {
       Ok(font) => self.font = font,
       Err(e) => println!("Error loading font: {}", e),
