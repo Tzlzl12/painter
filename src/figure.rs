@@ -13,7 +13,7 @@ use tiny_skia::{Color, Pixmap};
 
 use softbuffer::{Context, Surface};
 
-use crate::{axis::Axis, color};
+use crate::{axis::Axis, color, text_render::TextRender};
 
 pub struct Figure {
   window: Option<Rc<Window>>,
@@ -21,6 +21,7 @@ pub struct Figure {
   surface: Option<Surface<Rc<Window>, Rc<Window>>>,
 
   pixmap: Pixmap,
+  tr: TextRender,
   axes: Vec<Axis>,
   config: Config,
 }
@@ -49,6 +50,8 @@ impl Figure {
       window: None,
       context: None,
       surface: None,
+
+      tr: TextRender::new(),
       pixmap: Pixmap::new(width, height).unwrap(),
       axes,
       config,
@@ -57,6 +60,12 @@ impl Figure {
   pub fn show(&mut self) {
     let event_loop = EventLoop::new().unwrap();
     let _ = event_loop.run_app(self);
+  }
+  pub fn has_family(&self, family: &str) -> bool {
+    self.tr.has_family(family)
+  }
+  pub fn set_font(&mut self, family: &str) {
+    self.tr.load_font(family);
   }
 
   fn resize(&mut self, size: PhysicalSize<u32>) {
@@ -173,17 +182,32 @@ impl ApplicationHandler for Figure {
           return;
         }
 
-        // ================draw into pixmap====
-
+        // draw start
         let bg = color::get_bg();
         self
           .pixmap
           .fill(Color::from_rgba8(bg[0], bg[1], bg[2], bg[3]));
+
+        let mid = w / 2;
+        let mid_title_len = self.config.title.len() as u32 / 2;
+        const TITLE_SIZE: u32 = 16;
+        let mid = mid - mid_title_len * TITLE_SIZE;
+        let [r, g, b, a] = color::get_fg();
+        self.tr.draw(
+          &mut self.pixmap,
+          &self.config.title,
+          mid as f32,
+          12.,
+          26.,
+          Color::from_rgba8(r, g, b, a),
+        );
+        // ================draw into pixmap====
+
         //
         // draw axes
         for a in &mut self.axes {
           // println!("{} {} {:?}", a.x, a.y, a.veiwport);
-          a.render(&mut self.pixmap);
+          a.render(&mut self.pixmap, &self.tr);
         }
         //===========pixmap to buffer ===============
         let mut buffer = match surface.buffer_mut() {

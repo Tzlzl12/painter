@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
-use tiny_skia::{Paint, PathBuilder, Pixmap, Rect, Stroke, Transform};
+use tiny_skia::{Color, Paint, PathBuilder, Pixmap, Rect, Stroke, Transform};
 
-use crate::{color, drawable::Drawable};
+use crate::{color, drawable::Drawable, text_render::TextRender};
 
 pub struct Axis {
   pub x: f32,
@@ -32,7 +32,7 @@ impl Axis {
   }
 
   /// design to render axis with grid lines
-  fn render_axis(&self, pixmap: &mut Pixmap, ui_ts: &Transform) {
+  fn render_axis(&self, pixmap: &mut Pixmap, ui_ts: &Transform, tr: &TextRender) {
     let width = self.viewport.width();
     let height = self.viewport.height();
     let margin = (width * 0.1).min(50.0);
@@ -73,10 +73,20 @@ impl Axis {
       (-y_min / y_range) * -actual_h
     };
 
-    let (x_interval, _) = Self::calculate_tick_interval(x_range);
-    let (y_interval, _) = Self::calculate_tick_interval(y_range);
+    let (x_interval, xn) = Self::calculate_tick_interval(x_range);
+    let (y_interval, yn) = Self::calculate_tick_interval(y_range);
 
     self.draw_grid(pixmap, ui_ts, x_interval, y_interval, actual_w, actual_h);
+
+    self.draw_ticks(
+      pixmap,
+      ui_ts,
+      tr,
+      (x_interval, xn),
+      (y_interval, yn),
+      actual_w,
+      actual_h,
+    );
 
     if x_min <= 0.0 && x_max >= 0.0 {
       self.draw_axis_y(pixmap, ui_ts, actual_h, origin_x);
@@ -121,7 +131,65 @@ impl Axis {
 
     self.stroke_path(pixmap, pb, ts, 1., color::get_gray());
   }
+  fn draw_ticks(
+    &self, pixmap: &mut Pixmap, ui_ts: &Transform, tr: &TextRender, x_info: (f32, usize),
+    y_info: (f32, usize), w: f32, h: f32,
+  ) {
+    let (x_min, x_max) = self.config.x_limit.unwrap_or((0.0, 1.0));
+    let (y_min, y_max) = self.config.y_limit.unwrap_or((0.0, 1.0));
+    let x_range = (x_max - x_min).max(1e-6);
+    let y_range = (y_max - y_min).max(1e-6);
 
+    let (x_int, x_count) = x_info;
+    let (y_int, y_count) = y_info;
+
+    let font_size = 12.0; // 这个现在正确传给 size 参数
+    let [r, g, b, a] = color::get_fg();
+    let text_color = Color::from_rgba8(r, g, b, a);
+
+    // 1. 绘制 X 轴刻度 (标签在轴下方)
+    let x_start_val = (x_min / x_int).floor() * x_int;
+    for i in 0..x_count {
+      let x_val = x_start_val + (i as f32 * x_int);
+      if x_val >= x_min && x_val <= x_max + 1e-6 {
+        let px = (x_val - x_min) / x_range * w;
+        let label = format!("{:.1}", x_val);
+
+        // 修正居中：根据字符数量估算宽度，font_size * 0.5 是平均字符宽度
+        let text_w = label.len() as f32 * (font_size * 0.5);
+
+        tr.draw(
+          pixmap,
+          &label,
+          ui_ts.tx + px - (text_w / 2.0), // X: 轴原点 + 偏移 - 半宽
+          ui_ts.ty + 10.0,                // Y: 轴原点下方 10 像素
+          font_size,                      // Size
+          text_color,
+        );
+      }
+    }
+
+    // 2. 绘制 Y 轴刻度 (标签在轴左侧)
+    let y_start_val = (y_min / y_int).floor() * y_int;
+    for i in 0..y_count {
+      let y_val = y_start_val + (i as f32 * y_int);
+      if y_val >= y_min && y_val <= y_max + 1e-6 {
+        let py = -((y_val - y_min) / y_range * h); // 笛卡尔转屏幕坐标
+        let label = format!("{:.1}", y_val);
+
+        let text_w = label.len() as f32 * (font_size * 0.5);
+
+        tr.draw(
+          pixmap,
+          &label,
+          ui_ts.tx - text_w - 8.0,           // X: 轴原点左边，留 8px 间距
+          ui_ts.ty + py - (font_size / 2.0), // Y: 居中对齐刻度线
+          font_size,                         // Size
+          text_color,
+        );
+      }
+    }
+  }
   /// 绘制 X 轴
   fn draw_axis_x(&self, pixmap: &mut Pixmap, ts: &Transform, w: f32, origin_y: f32) {
     let mut pb = PathBuilder::new();
@@ -248,7 +316,7 @@ impl Axis {
       }
     }
   }
-  pub(crate) fn render(&mut self, pixmap: &mut Pixmap) {
+  pub(crate) fn render(&mut self, pixmap: &mut Pixmap, tr: &TextRender) {
     self.auto_limit();
 
     let width = self.viewport.width();
@@ -292,7 +360,7 @@ impl Axis {
       .pre_translate(-x_min, -y_min);
 
     // 绘制坐标轴：使用 UI 变换
-    self.render_axis(pixmap, &ui_ts);
+    self.render_axis(pixmap, &ui_ts, &tr);
 
     // 绘制数据：使用数据变换
     for drawable in &self.drawables {

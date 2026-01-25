@@ -1,7 +1,7 @@
 [package]
 name = "painter"
 description = "A simple plotter library"
-version = "0.1.7"
+version = "0.2.0"
 authors = ["tll tll53629581@gmail.com"]
 repository = "https://github.com/Tzlzl12/painter"
 edition = "2024"
@@ -26,6 +26,11 @@ exclude = [
 tiny-skia = "0.11.4"
 softbuffer = "0.4.8"
 anyhow = "1.0"
+
+# for font 
+ab_glyph = "0.2.32"
+fontdb = "0.23.0"
+
 
 [dependencies.winit]
 version = "0.30.12"
