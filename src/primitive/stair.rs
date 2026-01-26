@@ -33,9 +33,22 @@ impl Stair {
     self.x.borrow_mut().extend_from_slice(x);
     self.y.borrow_mut().extend_from_slice(y);
   }
+  /// Sets the style for the stair visualization.
+  ///
+  /// # Arguments
+  ///
+  /// * `style` - The `StairStyle` to apply.
   pub fn set_style(&self, style: StairStyle) {
     *self.stair_style.borrow_mut() = style;
   }
+  /// Sets the data for the stair visualization.
+  ///
+  /// This method clears any existing data before adding the new data.
+  ///
+  /// # Arguments
+  ///
+  /// * `x` - A slice of f32 values representing the x-coordinates.
+  /// * `y` - A slice of f32 values representing the y-coordinates.
   pub fn set_data(&self, x: &[f32], y: &[f32]) {
     self.x.borrow_mut().clear();
     self.y.borrow_mut().clear();

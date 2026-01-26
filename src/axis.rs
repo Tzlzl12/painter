@@ -274,7 +274,7 @@ impl Axis {
     (nice_interval, num_ticks)
   }
   fn auto_limit(&mut self) {
-    if self.config.x_limit.is_some() || self.config.y_limit.is_some() {
+    if self.config.x_limit.is_some() && self.config.y_limit.is_some() {
       return;
     }
     println!("into autolimit");

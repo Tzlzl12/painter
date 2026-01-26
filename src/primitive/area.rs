@@ -17,12 +17,18 @@ pub struct Area {
   x_edge: RefCell<Vec<f32>>,
   y_value: RefCell<Vec<f32>>,
 
-  pub area_type: AreaType,
+  area_type: AreaType,
 
   config: RefCell<Config>,
 }
 
 impl Area {
+  /// Creates a new `Area` with the given name and configuration.
+  ///
+  /// # Arguments
+  ///
+  /// * `name` - The name identifier for the area.
+  /// * `config` - The configuration settings for the area.
   pub fn new(name: String, config: Config) -> Self {
     Area {
       name,
@@ -32,6 +38,16 @@ impl Area {
       area_type: AreaType::Step,
     }
   }
+  /// Adds data to the existing x and y vectors.
+  ///
+  /// # Arguments
+  ///
+  /// * `x` - Slice of x coordinates to add.
+  /// * `y` - Slice of y coordinates to add.
+  ///
+  /// # Note
+  ///
+  /// This function does nothing if the lengths of `x` and `y` do not match.
   fn _add_data(&self, x: &[f32], y: &[f32]) {
     if x.len() != y.len() {
       return;
@@ -39,6 +55,16 @@ impl Area {
     self.x_edge.borrow_mut().extend_from_slice(x);
     self.y_value.borrow_mut().extend_from_slice(y);
   }
+  /// Sets the data for the area by replacing existing values.
+  ///
+  /// # Arguments
+  ///
+  /// * `x` - Slice of x coordinates (edges).
+  /// * `y` - Slice of y coordinates (values).
+  ///
+  /// # Note
+  ///
+  /// Prints a warning if `x.len() != y.len() - 1`.
   pub fn set_data(&self, x: &[f32], y: &[f32]) {
     if x.len() != y.len() - 1 {
       println!("make sure x length is less 1 then y length");
@@ -46,6 +72,17 @@ impl Area {
     self.x_edge.replace(x.to_vec());
     self.y_value.replace(y.to_vec());
   }
+  /// Sets data for the area using a prototype range definition.
+  ///
+  /// Generates x coordinates starting from `x_start` with a given `step`.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - Slice of y coordinates.
+  /// * `x_start` - The starting value for the x coordinates.
+  /// * `step` - The step size between consecutive x coordinates.
+  /// # Note
+  /// this `x` auto generated is not precise(need to optimize)
   pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
     let n = y.len();
     if n == 0 {
@@ -56,11 +93,36 @@ impl Area {
       .replace((0..=n).map(|i| x_start + i as f32 * step).collect());
     self.y_value.replace(y.to_vec());
   }
+  /// Sets data for the area using a linear step for x coordinates.
+  ///
+  /// This is a convenience wrapper around `set_data_prototype`.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - Slice of y coordinates.
+  /// * `x_start` - The starting value for the x coordinates.
+  /// * `step` - The step size between consecutive x coordinates.
   pub fn set_data_with_step(&self, y: &[f32], x_start: f32, step: f32) {
     self.set_data_prototype(y, x_start, step);
   }
+  /// Sets data for the area with normalized x coordinates (0, 1, 2, ...).
+  ///
+  /// This is a convenience wrapper around `set_data_prototype` with `x_start = 0.0` and `step = 1.0`.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - Slice of y coordinates.
   pub fn set_data_norm(&self, y: &[f32]) {
     self.set_data_prototype(y, 0.0, 1.0);
+  }
+  /// Changes the area type.
+  ///
+  /// # Arguments
+  ///
+  /// * `area_type` - The new area type.
+  ///   * (`AreaType::Line` or `AreaType::Step`)
+  pub fn change_area_type(&mut self, area_type: AreaType) {
+    self.area_type = area_type;
   }
 }
 

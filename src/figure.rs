@@ -108,7 +108,7 @@ impl Figure {
   }
   pub fn add_subplot(&mut self, layout: (u32, u32)) {
     self.config.layout = layout;
-
+    self.axes.clear();
     let (rows, cols) = self.config.layout;
 
     for _ in 0..rows * cols {

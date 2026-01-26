@@ -45,6 +45,11 @@ impl Histrogram {
       }
     }
   }
+  /// Sets the x-axis values for the chart.
+  ///
+  /// # Arguments
+  ///
+  /// * `x` - A slice of f32 values representing the x-axis coordinates.
   pub fn set_x(&self, x: &[f32]) {
     let mut x_vec = self.x.borrow_mut();
     let limit = x.len();
@@ -55,6 +60,13 @@ impl Histrogram {
       self.resize(limit);
     }
   }
+  /// Adds a new data series (bars) to the chart.
+  ///
+  /// Automatically assigns a color to the new series using an internal color index.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - A slice of f32 values representing the y-axis data.
   pub fn set_data(&self, y: &[f32]) {
     let mut bars_vec = self.bars.borrow_mut();
 
@@ -72,7 +84,16 @@ impl Histrogram {
     let bar = Bars::new(valid_value, config);
     bars_vec.push(bar);
   }
-  // althougn the function is supported, but not recommended to use it
+  /// Adds data to an existing data series at the specified index.
+  ///
+  /// This function is supported but not recommended for general use.
+  ///
+  /// # Arguments
+  ///
+  /// * `index` - The index of the data series to modify.
+  /// * `y` - A slice of f32 values to append to the series.
+  /// # Note
+  /// this method is not recommended
   pub fn add_data(&self, index: usize, y: &[f32]) {
     let mut bars_vec = self.bars.borrow_mut();
     if let Some(bar) = bars_vec.get_mut(index) {
@@ -85,6 +106,14 @@ impl Histrogram {
       }
     }
   }
+  /// Changes the data of an existing data series at the specified index.
+  ///
+  /// Replaces the existing data with the new values provided.
+  ///
+  /// # Arguments
+  ///
+  /// * `index` - The index of the data series to modify.
+  /// * `y` - A slice of f32 values to set as the new data.
   pub fn change_data(&mut self, index: usize, y: &[f32]) {
     let mut bars_vec = self.bars.borrow_mut();
     if let Some(bar) = bars_vec.get_mut(index) {
@@ -94,6 +123,16 @@ impl Histrogram {
       bar.y.extend(new_y);
     }
   }
+  /// Sets data for the chart, automatically generating x-axis values if not set.
+  ///
+  /// If the x-axis is empty, it will be generated starting from `x_start` with the given `step`.
+  /// Otherwise, only the y-axis data is set.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - A slice of f32 values representing the y-axis data.
+  /// * `x_start` - The starting value for the x-axis if it needs to be generated.
+  /// * `step` - The step/increment value for the x-axis if it needs to be generated.
   pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
     let n = y.len();
     if n == 0 {
@@ -132,9 +171,20 @@ impl Histrogram {
       self.set_data(y);
     }
   }
+  /// Sets data for the chart with x-axis starting at 0 and the specified step.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - A slice of f32 values representing the y-axis data.
+  /// * `step` - The step/increment value for the x-axis.
   pub fn set_data_with_step(&self, y: &[f32], step: f32) {
     self.set_data_prototype(y, 0., step);
   }
+  /// Sets normalized data for the chart with x-axis starting at 0 and a step of 1.
+  ///
+  /// # Arguments
+  ///
+  /// * `y` - A slice of f32 values representing the y-axis data.
   pub fn set_data_norm(&self, y: &[f32]) {
     self.set_data_prototype(y, 0., 1.);
   }

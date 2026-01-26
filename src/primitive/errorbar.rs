@@ -53,6 +53,15 @@ impl ErrorBar {
     vals.iter().sum::<f32>() / vals.len() as f32
   }
 
+  /// Sets data by calculating statistics from the provided values and creating a new bar.
+  ///
+  /// # Arguments
+  ///
+  /// * `vals` - A slice of f32 values to calculate statistics from.
+  ///
+  /// This method calculates the mean, minimum, and maximum values from `vals`,
+  /// creates a new `Bar` with these statistics and a color configuration,
+  /// and adds it to the collection of bars.
   pub fn set_data(&self, vals: &[f32]) {
     let index = self.color_index.get();
     let color = color::get_color(index);
@@ -77,6 +86,16 @@ impl ErrorBar {
 
     self.bars.borrow_mut().push(bar);
   }
+  /// Creates a new bar with the provided statistics and adds it to the collection.
+  ///
+  /// # Arguments
+  ///
+  /// * `mean` - The mean (average) value for the bar.
+  /// * `min` - The minimum value for the bar.
+  /// * `max` - The maximum value for the bar.
+  ///
+  /// This is a prototype method that allows directly specifying statistics
+  /// instead of calculating them from raw values.
   pub fn set_data_prototype(&self, mean: f32, min: f32, max: f32) {
     let index = self.color_index.get();
     let color = color::get_color(index);

@@ -7,6 +7,10 @@ use crate::{
   primitive::Config,
 };
 
+/// Scatter
+/// * `y` is the value in y coordinate
+/// * `value`  is shown by the circle size
+/// * `forth_dim` is shown by the circle color(not implement)
 pub struct Scatter {
   name: String,
   x: RefCell<Vec<f32>>,
@@ -62,8 +66,10 @@ impl Scatter {
       .replace(Some(values.iter().take(n).cloned().collect()));
   }
 
-  //===== functions for cahnge data =======
+  //===== functions for change data =======
 
+  /// Change y values
+  /// make sure `x` has been set
   pub fn change_y(&self, y: &[f32]) {
     if self.x.borrow().is_empty() {
       return;
@@ -71,6 +77,8 @@ impl Scatter {
     let n = self.x.borrow().len();
     self.y.replace(y.iter().take(n).cloned().collect());
   }
+  /// Change value dimension
+  /// make sure `x` has been set
   pub fn change_values(&self, values: &[f32]) {
     if self.x.borrow().is_empty() {
       return;
@@ -80,6 +88,8 @@ impl Scatter {
       .value
       .replace(Some(values.iter().take(n).cloned().collect()));
   }
+  /// Change forth dimension
+  /// make sure `x` has been set
   pub fn change_forth_dim(&self, values: &[f32]) {
     if self.x.borrow().is_empty() {
       return;
@@ -90,6 +100,8 @@ impl Scatter {
       .replace(Some(values.iter().take(n).cloned().collect()));
   }
 
+  /// Set data prototype with y values, x start position and step
+  /// If x is already set, only y will be updated
   pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
     let n = y.len();
     if n == 0 {
@@ -106,9 +118,11 @@ impl Scatter {
       .replace((0..=n).map(|v| v as f32 * step + x_start).collect());
     self.set_y(y);
   }
+  /// Set data with y values and step starting from 0
   pub fn set_date_with_step(&self, y: &[f32], step: f32) {
     self.set_data_prototype(y, 0., step);
   }
+  /// Set normalized data with y values starting from 0 with step 1
   pub fn set_data_norm(&self, y: &[f32]) {
     self.set_data_prototype(y, 0., 1.);
   }

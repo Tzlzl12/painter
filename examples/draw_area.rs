@@ -21,7 +21,7 @@ fn main() {
   his1.set_data_norm(&y1);
 
   let mut area = Area::new("test2".to_string(), primitive::Config::default());
-  area.area_type = AreaType::Line;
+  area.change_area_type(AreaType::Line);
   let his2 = Rc::new(area);
   his2.set_data(&x, &[1., 4., 3., 7., 2., 7.]);
 
