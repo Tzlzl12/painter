@@ -10,7 +10,8 @@ license = "MIT"
 include = [
   "src/**/*.rs",
   "Cargo.toml",
-  "LICENSE"
+  "src/maple.ttf",
+  "LICENSE",
 ]
 
 exclude = [
