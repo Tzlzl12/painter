@@ -1,12 +1,10 @@
-use std::rc::Rc;
-
 use painter::{Config, Figure, primitive::ErrorBar};
 
 fn main() {
   let mut figure = Figure::new(Config::default());
 
   // 创建error bar实例
-  let error_bar = ErrorBar::new("实验组对比".to_string());
+  let mut error_bar = ErrorBar::new("实验组对比".to_string());
 
   // 方法1: 使用set_data传入原始数据，自动计算平均值和范围
   // 组A: 控制组 - 5个重复测量值
@@ -33,7 +31,7 @@ fn main() {
 
   // 添加error bar到图形
   let ax = figure.nth(0).unwrap();
-  ax.add(Rc::new(error_bar));
+  ax.add(Box::new(error_bar));
   ax.set_strategy(painter::ScaleStrategy::Stretch);
 
   // 显示图形

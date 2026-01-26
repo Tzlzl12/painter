@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use tiny_skia::{FillRule, Paint, PathBuilder, Point, Stroke, Transform};
 
 use crate::{
@@ -14,12 +12,12 @@ pub enum AreaType {
 }
 pub struct Area {
   name: String,
-  x_edge: RefCell<Vec<f32>>,
-  y_value: RefCell<Vec<f32>>,
+  x_edge: Vec<f32>,
+  y_value: Vec<f32>,
 
   area_type: AreaType,
 
-  config: RefCell<Config>,
+  config: Config,
 }
 
 impl Area {
@@ -32,9 +30,9 @@ impl Area {
   pub fn new(name: String, config: Config) -> Self {
     Area {
       name,
-      x_edge: RefCell::new(Vec::new()),
-      y_value: RefCell::new(Vec::new()),
-      config: RefCell::new(config),
+      x_edge: Vec::new(),
+      y_value: Vec::new(),
+      config,
       area_type: AreaType::Step,
     }
   }
@@ -48,12 +46,12 @@ impl Area {
   /// # Note
   ///
   /// This function does nothing if the lengths of `x` and `y` do not match.
-  fn _add_data(&self, x: &[f32], y: &[f32]) {
+  fn _add_data(&mut self, x: &[f32], y: &[f32]) {
     if x.len() != y.len() {
       return;
     }
-    self.x_edge.borrow_mut().extend_from_slice(x);
-    self.y_value.borrow_mut().extend_from_slice(y);
+    self.x_edge.extend_from_slice(x);
+    self.y_value.extend_from_slice(y);
   }
   /// Sets the data for the area by replacing existing values.
   ///
@@ -65,12 +63,12 @@ impl Area {
   /// # Note
   ///
   /// Prints a warning if `x.len() != y.len() - 1`.
-  pub fn set_data(&self, x: &[f32], y: &[f32]) {
+  pub fn set_data(&mut self, x: &[f32], y: &[f32]) {
     if x.len() != y.len() - 1 {
       println!("make sure x length is less 1 then y length");
     }
-    self.x_edge.replace(x.to_vec());
-    self.y_value.replace(y.to_vec());
+    self.x_edge = x.to_vec();
+    self.y_value = y.to_vec();
   }
   /// Sets data for the area using a prototype range definition.
   ///
@@ -83,15 +81,13 @@ impl Area {
   /// * `step` - The step size between consecutive x coordinates.
   /// # Note
   /// this `x` auto generated is not precise(need to optimize)
-  pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
+  pub fn set_data_prototype(&mut self, y: &[f32], x_start: f32, step: f32) {
     let n = y.len();
     if n == 0 {
       return;
     }
-    self
-      .x_edge
-      .replace((0..=n).map(|i| x_start + i as f32 * step).collect());
-    self.y_value.replace(y.to_vec());
+    self.x_edge = (0..=n).map(|i| x_start + i as f32 * step).collect();
+    self.y_value = y.to_vec();
   }
   /// Sets data for the area using a linear step for x coordinates.
   ///
@@ -102,7 +98,7 @@ impl Area {
   /// * `y` - Slice of y coordinates.
   /// * `x_start` - The starting value for the x coordinates.
   /// * `step` - The step size between consecutive x coordinates.
-  pub fn set_data_with_step(&self, y: &[f32], x_start: f32, step: f32) {
+  pub fn set_data_with_step(&mut self, y: &[f32], x_start: f32, step: f32) {
     self.set_data_prototype(y, x_start, step);
   }
   /// Sets data for the area with normalized x coordinates (0, 1, 2, ...).
@@ -112,7 +108,7 @@ impl Area {
   /// # Arguments
   ///
   /// * `y` - Slice of y coordinates.
-  pub fn set_data_norm(&self, y: &[f32]) {
+  pub fn set_data_norm(&mut self, y: &[f32]) {
     self.set_data_prototype(y, 0.0, 1.0);
   }
   /// Changes the area type.
@@ -128,10 +124,7 @@ impl Area {
 
 impl Drawable for Area {
   fn draw(&self, pixmap: &mut tiny_skia::Pixmap, ts: &tiny_skia::Transform) {
-    let x_vec = self.x_edge.borrow();
-    let y_vec = self.y_value.borrow();
-
-    if x_vec.is_empty() {
+    if self.x_edge.is_empty() {
       return;
     }
 
@@ -142,16 +135,16 @@ impl Drawable for Area {
       // --- 模式 1: Step (阶梯状/柱状面积) ---
       AreaType::Step => {
         // 如果只有一位 x，自动补齐为从 0.0 到 x[0]
-        let edges: Vec<f32> = if x_vec.len() == 1 {
-          vec![0.0, x_vec[0]]
+        let edges: Vec<f32> = if self.x_edge.len() == 1 {
+          vec![0.0, self.x_edge[0]]
         } else {
-          x_vec.clone()
+          self.x_edge.clone()
         };
 
         for i in 0..edges.len() - 1 {
           let x_l = edges[i];
           let x_r = edges[i + 1];
-          let y_val = y_vec.get(i).cloned().unwrap_or(0.0);
+          let y_val = self.y_value.get(i).cloned().unwrap_or(0.0);
 
           // 构造矩形的四个点并映射
           let mut p1 = Point::from_xy(x_l, baseline);
@@ -174,22 +167,22 @@ impl Drawable for Area {
 
       // --- 模式 2: Curve (折线面积填充) ---
       AreaType::Line => {
-        if !x_vec.is_empty() {
+        if !self.x_edge.is_empty() {
           // 1. 起点：(x_0, baseline)
-          let mut p_start = Point::from_xy(x_vec[0], baseline);
+          let mut p_start = Point::from_xy(self.x_edge[0], baseline);
           ts.map_point(&mut p_start);
           pb.move_to(p_start.x, p_start.y);
 
           // 2. 连接所有数据点 (x_i, y_i)
-          for i in 0..x_vec.len() {
-            let y_val = y_vec.get(i).cloned().unwrap_or(0.0);
-            let mut p = Point::from_xy(x_vec[i], y_val);
+          for i in 0..self.x_edge.len() {
+            let y_val = self.y_value.get(i).cloned().unwrap_or(0.0);
+            let mut p = Point::from_xy(self.x_edge[i], y_val);
             ts.map_point(&mut p);
             pb.line_to(p.x, p.y);
           }
 
           // 3. 终点：(x_last, baseline)
-          let mut p_end = Point::from_xy(*x_vec.last().unwrap(), baseline);
+          let mut p_end = Point::from_xy(*self.x_edge.last().unwrap(), baseline);
           ts.map_point(&mut p_end);
           pb.line_to(p_end.x, p_end.y);
           pb.close();
@@ -199,9 +192,8 @@ impl Drawable for Area {
 
     // --- 统一渲染逻辑 ---
     if let Some(path) = pb.finish() {
-      let config = self.config.borrow();
       let mut paint = Paint::default();
-      let [r, g, b, a] = config.color;
+      let [r, g, b, a] = self.config.color;
 
       // 1. 填充路径 (使用半透明色)
       paint.set_color_rgba8(r, g, b, a / 2);
@@ -216,34 +208,21 @@ impl Drawable for Area {
 
       // 2. 描边 (使用相同的颜色，或者你可以根据需求调深一点)
       let stroke = Stroke {
-        width: config.stroke_width,
+        width: self.config.stroke_width,
         ..Default::default()
       };
       pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
     }
   }
   fn bound(&self) -> Option<Bound> {
-    if self.x_edge.borrow().is_empty() || self.y_value.borrow().is_empty() {
+    if self.x_edge.is_empty() || self.y_value.is_empty() {
       return None;
     }
-    let x_min = self
-      .x_edge
-      .borrow()
-      .iter()
-      .fold(f32::INFINITY, |a, &b| a.min(b));
-    let x_max = self
-      .x_edge
-      .borrow()
-      .iter()
-      .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
-    let y_min = self
-      .y_value
-      .borrow()
-      .iter()
-      .fold(f32::INFINITY, |a, &b| a.min(b));
+    let x_min = self.x_edge.iter().fold(f32::INFINITY, |a, &b| a.min(b));
+    let x_max = self.x_edge.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
+    let y_min = self.y_value.iter().fold(f32::INFINITY, |a, &b| a.min(b));
     let y_max = self
       .y_value
-      .borrow()
       .iter()
       .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
 
@@ -258,9 +237,9 @@ impl Drawable for Area {
     self.name.clone()
   }
   fn get_color(&self) -> [u8; 4] {
-    self.config.borrow().color
+    self.config.color
   }
-  fn set_color(&self, color: [u8; 4]) {
-    self.config.borrow_mut().color = color;
+  fn set_color(&mut self, color: [u8; 4]) {
+    self.config.color = color;
   }
 }

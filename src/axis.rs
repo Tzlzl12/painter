@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use tiny_skia::{Color, Paint, PathBuilder, Pixmap, Rect, Stroke, Transform};
 
 use crate::{color, drawable::Drawable, text_render::TextRender};
@@ -9,7 +7,7 @@ pub struct Axis {
   pub y: f32,
   pub viewport: Rect,
   color_index: usize,
-  drawables: Vec<Rc<dyn Drawable>>,
+  drawables: Vec<Box<dyn Drawable>>,
 
   config: Config,
 }
@@ -363,7 +361,7 @@ impl Axis {
     self.render_axis(pixmap, &ui_ts, &tr);
 
     // 绘制数据：使用数据变换
-    for drawable in &self.drawables {
+    for drawable in &mut self.drawables {
       if drawable.get_color() == [0, 0, 0, 0] {
         let color = color::get_color(self.color_index & 7);
         self.color_index += 1;
@@ -372,7 +370,7 @@ impl Axis {
       drawable.draw(pixmap, &data_ts);
     }
   }
-  pub fn add(&mut self, drawable: Rc<dyn Drawable>) {
+  pub fn add(&mut self, drawable: Box<dyn Drawable>) {
     self.drawables.push(drawable);
   }
   pub fn set_x_limit(&mut self, limit: Option<(f32, f32)>) {

@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use painter::{
   Config, Figure,
   primitive::{self, Curve},
@@ -12,23 +10,20 @@ fn main() {
   let ax = figure.nth(0).unwrap();
 
   // 线 2: 参数方程
-  let curve2 = Rc::new(Curve::new(
-    "Circle".to_string(),
-    primitive::Config::default(),
-  ));
+  let mut curve2 = Curve::new("Circle".to_string(), primitive::Config::default());
   let t = utils::linspace(0.0, 6.28, 100);
   curve2.set_parametric(&t, |v| v.cos(), |v| v.sin());
-  ax.add(curve2);
+  ax.add(Box::new(curve2));
   // 线 1: 函数生成
-  let curve1 = Rc::new(Curve::new("Sine".to_string(), primitive::Config::default()));
+  let mut curve1 = Curve::new("Sine".to_string(), primitive::Config::default());
   let x = utils::linspace(3.14, 6.28, 100);
   curve1.set_fn(&x, |v| 3. * v.sin());
-  ax.add(curve1);
+  ax.add(Box::new(curve1));
 
   // 线 3: 直接喂数据
-  let curve3 = Rc::new(Curve::new("Data".to_string(), primitive::Config::default()));
+  let mut curve3 = Curve::new("Data".to_string(), primitive::Config::default());
   curve3.add_data(&[0.0, 2.0, 4.0], &[0.5, 0.8, 0.2]);
-  ax.add(curve3);
+  ax.add(Box::new(curve3));
 
   figure.show();
 }

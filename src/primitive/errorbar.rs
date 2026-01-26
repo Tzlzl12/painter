@@ -1,7 +1,4 @@
-use std::{
-  cell::{Cell, RefCell},
-  f32, u8,
-};
+use std::{f32, u8};
 
 use tiny_skia::{Paint, PathBuilder, Point, Stroke, Transform};
 
@@ -31,9 +28,9 @@ impl Bar {
 
 pub struct ErrorBar {
   name: String,
-  bars: RefCell<Vec<Bar>>,
+  bars: Vec<Bar>,
 
-  color_index: Cell<usize>,
+  color_index: usize,
 }
 
 impl ErrorBar {
@@ -42,8 +39,8 @@ impl ErrorBar {
   pub fn new(name: String) -> Self {
     Self {
       name,
-      bars: RefCell::new(Vec::new()),
-      color_index: Cell::new(0),
+      bars: Vec::new(),
+      color_index: 0,
     }
   }
   fn get_avarage(vals: &[f32]) -> f32 {
@@ -62,10 +59,10 @@ impl ErrorBar {
   /// This method calculates the mean, minimum, and maximum values from `vals`,
   /// creates a new `Bar` with these statistics and a color configuration,
   /// and adds it to the collection of bars.
-  pub fn set_data(&self, vals: &[f32]) {
-    let index = self.color_index.get();
+  pub fn set_data(&mut self, vals: &[f32]) {
+    let index = self.color_index;
     let color = color::get_color(index);
-    self.color_index.set((index + 1) & 7);
+    self.color_index = (index + 1) & 7;
 
     let config = Config {
       color,
@@ -84,7 +81,7 @@ impl ErrorBar {
 
     let bar = Bar::new(mean, min, max, config);
 
-    self.bars.borrow_mut().push(bar);
+    self.bars.push(bar);
   }
   /// Creates a new bar with the provided statistics and adds it to the collection.
   ///
@@ -96,10 +93,10 @@ impl ErrorBar {
   ///
   /// This is a prototype method that allows directly specifying statistics
   /// instead of calculating them from raw values.
-  pub fn set_data_prototype(&self, mean: f32, min: f32, max: f32) {
-    let index = self.color_index.get();
+  pub fn set_data_prototype(&mut self, mean: f32, min: f32, max: f32) {
+    let index = self.color_index;
     let color = color::get_color(index);
-    self.color_index.set((index + 1) & 7);
+    self.color_index = (index + 1) & 7;
 
     let config = Config {
       color,
@@ -107,20 +104,18 @@ impl ErrorBar {
     };
 
     let bar = Bar::new(mean, min, max, config);
-    self.bars.borrow_mut().push(bar);
+    self.bars.push(bar);
   }
 }
 
 impl Drawable for ErrorBar {
   fn draw(&self, pixmap: &mut tiny_skia::Pixmap, ts: &tiny_skia::Transform) {
-    let bars = self.bars.borrow();
-
-    if bars.is_empty() {
+    if self.bars.is_empty() {
       return;
     }
 
     let mut paint = Paint::default();
-    for (y_index, bar) in bars.iter().enumerate() {
+    for (y_index, bar) in self.bars.iter().enumerate() {
       if bar.config.is_hidden {
         continue;
       }
@@ -173,18 +168,17 @@ impl Drawable for ErrorBar {
     }
   }
   fn bound(&self) -> Option<crate::drawable::Bound> {
-    let bars = self.bars.borrow();
-    if bars.is_empty() {
+    if self.bars.is_empty() {
       return None;
     }
 
     let y_min: f32 = Self::OFFSET as f32;
-    let y_max = (bars.len() + Self::OFFSET) as f32;
+    let y_max = (self.bars.len() + Self::OFFSET) as f32;
 
     let mut x_min = f32::INFINITY;
     let mut x_max = f32::NEG_INFINITY;
 
-    for bar in bars.iter() {
+    for bar in self.bars.iter() {
       x_min = x_min.min(bar.min);
       x_max = x_max.max(bar.max);
     }
@@ -203,5 +197,5 @@ impl Drawable for ErrorBar {
   fn get_color(&self) -> [u8; 4] {
     [255, 255, 255, 255]
   }
-  fn set_color(&self, _color: [u8; 4]) {}
+  fn set_color(&mut self, _color: [u8; 4]) {}
 }

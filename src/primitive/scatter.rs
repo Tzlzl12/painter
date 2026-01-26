@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Point, Transform};
 
 use crate::{
@@ -13,149 +11,134 @@ use crate::{
 /// * `forth_dim` is shown by the circle color(not implement)
 pub struct Scatter {
   name: String,
-  x: RefCell<Vec<f32>>,
-  y: RefCell<Vec<f32>>,
-  value: RefCell<Option<Vec<f32>>>,
-  forth_dim: RefCell<Option<Vec<f32>>>,
-  config: RefCell<Config>,
+  x: Vec<f32>,
+  y: Vec<f32>,
+  value: Option<Vec<f32>>,
+  forth_dim: Option<Vec<f32>>,
+  config: Config,
 }
 
 impl Scatter {
   pub fn new(name: String, config: Config) -> Self {
     Self {
       name,
-      x: RefCell::new(Vec::new()),
-      y: RefCell::new(Vec::new()),
-      value: RefCell::new(None),
-      forth_dim: RefCell::new(None),
-      config: RefCell::new(config),
+      x: Vec::new(),
+      y: Vec::new(),
+      value: None,
+      forth_dim: None,
+      config,
     }
   }
-  pub fn set_x(&self, x: &[f32]) {
-    self.x.replace(x.to_vec());
+  pub fn set_x(&mut self, x: &[f32]) {
+    self.x = x.to_vec();
   }
   /// set y values
   /// make sure `x` has been set
-  pub fn set_y(&self, y: &[f32]) {
-    if self.x.borrow().is_empty() {
+  pub fn set_y(&mut self, y: &[f32]) {
+    if self.x.is_empty() {
       return;
     }
-    let n = self.x.borrow().len();
-    self.y.replace(y.iter().take(n).cloned().collect());
+    let n = self.x.len();
+    self.y = y.iter().take(n).cloned().collect();
   }
   /// set value dimension, show by size
   /// make sure `x` has been set
-  pub fn set_value(&self, values: &[f32]) {
-    if self.x.borrow().is_empty() {
+  pub fn set_value(&mut self, values: &[f32]) {
+    if self.x.is_empty() {
       return;
     }
-    let n = self.x.borrow().len();
-    self
-      .value
-      .replace(Some(values.iter().take(n).cloned().collect()));
+    let n = self.x.len();
+    self.value = Some(values.iter().take(n).cloned().collect());
   }
   /// set forth dimension, show by colors
   /// make sure `x` has been set
-  pub fn set_forth_dim(&self, values: &[f32]) {
-    if self.x.borrow().is_empty() {
+  pub fn set_forth_dim(&mut self, values: &[f32]) {
+    if self.x.is_empty() {
       return;
     }
-    let n = self.x.borrow().len();
-    self
-      .forth_dim
-      .replace(Some(values.iter().take(n).cloned().collect()));
+    let n = self.x.len();
+    self.forth_dim = Some(values.iter().take(n).cloned().collect());
   }
 
   //===== functions for change data =======
 
   /// Change y values
   /// make sure `x` has been set
-  pub fn change_y(&self, y: &[f32]) {
-    if self.x.borrow().is_empty() {
+  pub fn change_y(&mut self, y: &[f32]) {
+    if self.x.is_empty() {
       return;
     }
-    let n = self.x.borrow().len();
-    self.y.replace(y.iter().take(n).cloned().collect());
+    let n = self.x.len();
+    self.y = y.iter().take(n).cloned().collect();
   }
   /// Change value dimension
   /// make sure `x` has been set
-  pub fn change_values(&self, values: &[f32]) {
-    if self.x.borrow().is_empty() {
+  pub fn change_values(&mut self, values: &[f32]) {
+    if self.x.is_empty() {
       return;
     }
-    let n = self.x.borrow().len();
-    self
-      .value
-      .replace(Some(values.iter().take(n).cloned().collect()));
+    let n = self.x.len();
+    self.value = Some(values.iter().take(n).cloned().collect());
   }
   /// Change forth dimension
   /// make sure `x` has been set
-  pub fn change_forth_dim(&self, values: &[f32]) {
-    if self.x.borrow().is_empty() {
+  pub fn change_forth_dim(&mut self, values: &[f32]) {
+    if self.x.is_empty() {
       return;
     }
-    let n = self.x.borrow().len();
-    self
-      .forth_dim
-      .replace(Some(values.iter().take(n).cloned().collect()));
+    let n = self.x.len();
+    self.forth_dim = Some(values.iter().take(n).cloned().collect());
   }
 
   /// Set data prototype with y values, x start position and step
   /// If x is already set, only y will be updated
-  pub fn set_data_prototype(&self, y: &[f32], x_start: f32, step: f32) {
+  pub fn set_data_prototype(&mut self, y: &[f32], x_start: f32, step: f32) {
     let n = y.len();
     if n == 0 {
       return;
     }
 
-    if !self.x.borrow().is_empty() {
+    if !self.x.is_empty() {
       self.set_y(y);
       return;
     }
 
-    self
-      .x
-      .replace((0..=n).map(|v| v as f32 * step + x_start).collect());
+    self.x = (0..=n).map(|v| v as f32 * step + x_start).collect();
     self.set_y(y);
   }
   /// Set data with y values and step starting from 0
-  pub fn set_date_with_step(&self, y: &[f32], step: f32) {
+  pub fn set_date_with_step(&mut self, y: &[f32], step: f32) {
     self.set_data_prototype(y, 0., step);
   }
   /// Set normalized data with y values starting from 0 with step 1
-  pub fn set_data_norm(&self, y: &[f32]) {
+  pub fn set_data_norm(&mut self, y: &[f32]) {
     self.set_data_prototype(y, 0., 1.);
   }
 }
 
 impl Drawable for Scatter {
   fn draw(&self, pixmap: &mut Pixmap, ts: &Transform) {
-    let x_vec = self.x.borrow();
-
-    let y_vec = self.y.borrow();
-
-    if x_vec.len() != y_vec.len() || x_vec.is_empty() {
+    if self.x.len() != self.y.len() || self.x.is_empty() {
       return;
     }
 
-    let config = self.config.borrow();
     const RADIUS: f32 = 5.;
 
     let mut paint = Paint::default();
-    let [r, g, b, a] = config.color;
+    let [r, g, b, a] = self.config.color;
     paint.anti_alias = true;
 
     let values;
-    if self.value.borrow().is_none() {
-      values = vec![1.0; x_vec.len()];
+    if self.value.is_none() {
+      values = vec![1.0; self.x.len()];
     } else {
-      values = self.value.borrow().as_ref().unwrap().clone();
+      values = self.value.as_ref().unwrap().clone();
     }
 
     let mean = values.iter().sum::<f32>() / values.len() as f32;
 
-    for i in 0..x_vec.len() {
-      let mut center = Point::from_xy(x_vec[i], y_vec[i]);
+    for i in 0..self.x.len() {
+      let mut center = Point::from_xy(self.x[i], self.y[i]);
       // switch paint to for range to prepare for setting color based on forth_dim
       paint.set_color_rgba8(r, g, b, a);
       ts.map_point(&mut center);
@@ -176,10 +159,7 @@ impl Drawable for Scatter {
   }
 
   fn bound(&self) -> Option<Bound> {
-    let x_vec = self.x.borrow();
-    let y_vec = self.y.borrow();
-
-    if x_vec.is_empty() || y_vec.is_empty() || x_vec.len() != y_vec.len() {
+    if self.x.is_empty() || self.y.is_empty() || self.x.len() != self.y.len() {
       return None;
     }
     let padding = 1.0;
@@ -189,7 +169,7 @@ impl Drawable for Scatter {
     let mut y_min = f32::INFINITY;
     let mut y_max = f32::NEG_INFINITY;
 
-    for (&xv, &yv) in x_vec.iter().zip(y_vec.iter()) {
+    for (&xv, &yv) in self.x.iter().zip(self.y.iter()) {
       x_min = x_min.min(xv);
       x_max = x_max.max(xv);
       y_min = y_min.min(yv);
@@ -208,10 +188,10 @@ impl Drawable for Scatter {
     self.name.clone()
   }
   fn get_color(&self) -> [u8; 4] {
-    self.config.borrow().color
+    self.config.color
   }
 
-  fn set_color(&self, color: [u8; 4]) {
-    self.config.borrow_mut().color = color;
+  fn set_color(&mut self, color: [u8; 4]) {
+    self.config.color = color;
   }
 }

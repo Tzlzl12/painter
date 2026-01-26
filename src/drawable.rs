@@ -11,5 +11,5 @@ pub trait Drawable {
   fn bound(&self) -> Option<Bound>;
   fn name(&self) -> String;
   fn get_color(&self) -> [u8; 4];
-  fn set_color(&self, color: [u8; 4]);
+  fn set_color(&mut self, color: [u8; 4]);
 }
