@@ -1,16 +1,10 @@
-pub fn linspace(start: f32, end: f32, n: usize) -> Vec<f32> {
-  if n == 0 {
-    return Vec::new();
-  }
-
-  if n == 1 {
+pub fn linspace(start: f32, stop: f32, n: usize) -> Vec<f32> {
+  if n <= 1 {
     return vec![start];
   }
-
-  let step = (end - start) / (n - 1) as f32;
-  (0..n).map(|i| start + step * i as f32).collect()
+  let delta = (stop - start) / (n - 1) as f32;
+  (0..n).map(|i| start + i as f32 * delta).collect()
 }
-
 use std::f32::consts::PI;
 
 fn _sin_taylor(v: f32) -> f32 {
@@ -22,7 +16,7 @@ fn _sin(mut x: f32) -> f32 {
   let two_pi = 2.0 * PI;
 
   // 1. 将 x 映射到 [0, 2pi]
-  x = x % two_pi;
+  x %= two_pi;
   if x < 0.0 {
     x += two_pi;
   }

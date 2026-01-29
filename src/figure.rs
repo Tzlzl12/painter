@@ -1,4 +1,4 @@
-use std::{num::NonZeroU32, rc::Rc};
+use std::{num::NonZeroU32, rc::Rc, vec};
 
 use winit::{
   application::ApplicationHandler,
@@ -44,8 +44,7 @@ impl Default for Config {
 impl Figure {
   pub fn new(config: Config) -> Self {
     let (width, height) = config.size;
-    let mut axes = Vec::new();
-    axes.push(Axis::new(0., 0., (0., 0.)));
+    let axes = vec![Axis::new(0., 0., (0., 0.))];
     Self {
       window: None,
       context: None,
@@ -246,6 +245,7 @@ impl ApplicationHandler for Figure {
         ..
       } => match (code, key_state.is_pressed()) {
         (KeyCode::Escape, true) => event_loop.exit(),
+        (KeyCode::KeyQ, true) => event_loop.exit(),
         _ => {}
       },
       _ => {}

@@ -1,6 +1,6 @@
-use ab_glyph::{Font, FontVec, Point, ScaleFont};
+use ab_glyph::Font;
+use ab_glyph::{FontVec, ScaleFont};
 use fontdb::{Database, Family, Query};
-use tiny_skia::{Color, IntSize, Paint, Pixmap, Rect, Transform};
 
 pub struct TextRender {
   font: FontVec,
