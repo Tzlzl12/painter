@@ -6,7 +6,7 @@ use crate::{
   primitive::Config,
 };
 
-struct Bars {
+pub(crate) struct Bars {
   y: Vec<f32>,
 
   config: Config,
@@ -58,6 +58,20 @@ impl Histrogram {
       self.resize(limit);
     }
   }
+  pub(crate) fn gen_config(&mut self) -> Config {
+    // auto choose color
+    let color = color::get_color(self.color_index);
+    let index = self.color_index;
+    self.color_index = (index + 1) & 7;
+
+    Config {
+      color,
+      ..Config::default()
+    }
+  }
+  pub(crate) fn get_color_index(&self) -> usize {
+    self.color_index
+  }
   /// Adds a new data series (bars) to the chart.
   ///
   /// Automatically assigns a color to the new series using an internal color index.
@@ -66,15 +80,7 @@ impl Histrogram {
   ///
   /// * `y` - A slice of f32 values representing the y-axis data.
   pub fn set_data(&mut self, y: &[f32]) {
-    // auto choose color
-    let color = color::get_color(self.color_index);
-    let index = self.color_index;
-    self.color_index = (index + 1) & 7;
-
-    let config = Config {
-      color,
-      ..Config::default()
-    };
+    let config = self.gen_config();
     // get the value based on the max_len(x)
     let valid_value: Vec<f32> = y.iter().take(self.max_len()).cloned().collect();
     let bar = Bars::new(valid_value, config);
@@ -144,16 +150,8 @@ impl Histrogram {
       // get the max bins
       let limit = self.x.len().saturating_sub(1);
 
-      // auto set color
-      let idx = self.color_index;
-      let color = color::get_color(idx);
-      self.color_index = (idx + 1) & 7;
-
-      let config = Config {
-        color,
-        ..Config::default()
-      };
-
+      let config = self.gen_config();
+      // get the value based on the max_len(x)
       // to the same length as x bins
       let final_y = y.iter().take(limit).cloned().collect::<Vec<f32>>();
       self.bars.push(Bars::new(final_y, config));
@@ -181,6 +179,18 @@ impl Histrogram {
   }
 }
 
+// with errorbar
+impl Histrogram {
+  pub(crate) fn get_bars(&self) -> &[Bars] {
+    &self.bars
+  }
+}
+impl Bars {
+  pub(crate) fn get_values(&self) -> &[f32] {
+    self.y.as_ref()
+  }
+}
+
 impl Drawable for Histrogram {
   fn draw(&self, pixmap: &mut Pixmap, ts: &Transform) {
     // 只有当至少有两个刻度（一个槽位）且有数据组时才绘制
@@ -191,14 +201,16 @@ impl Drawable for Histrogram {
     let num_groups = self.bars.len() as f32;
     let group_width_ratio = 0.8;
 
-    // 预计算一些不变的常量
+    // constants
     let half_num_groups = (num_groups - 1.0) / 2.0;
 
-    // 遍历槽位：i 是槽位索引，x_start/x_end 是左右边界
+    // 遍历槽位：i 是槽位索引，x_start/x_end is the start/end of the slot
     for i in 0..(self.x.len() - 1) {
       let x_start = self.x[i];
       let x_end = self.x[i + 1];
       let total_step_w = x_end - x_start;
+      // shift half of total_step_w
+      let x_start = x_start + total_step_w * 0.5;
       let x_center = x_start + total_step_w * 0.5;
       let single_bar_w = (total_step_w * group_width_ratio) / num_groups;
 
@@ -210,13 +222,13 @@ impl Drawable for Histrogram {
         let y_val = bar.y[i];
         if y_val == 0.0 {
           continue;
-        } // 零值不画，节省性能
+        } // 0. not draw
 
         let offset = (g_idx as f32 - half_num_groups) * single_bar_w;
         let x_l = x_center + offset - single_bar_w * 0.5;
         let x_r = x_center + offset + single_bar_w * 0.5;
 
-        // 映射并构造矩形
+        // draw rect
         let mut p1 = Point::from_xy(x_l, y_val);
         let mut p2 = Point::from_xy(x_r, 0.0);
         ts.map_point(&mut p1);
@@ -235,7 +247,7 @@ impl Drawable for Histrogram {
 
           pixmap.fill_rect(r_rect, &paint, Transform::identity(), None);
 
-          // 描边
+          // border
           let path = PathBuilder::from_rect(r_rect);
           let mut stroke_paint = Paint::default();
           stroke_paint.set_color_rgba8(
