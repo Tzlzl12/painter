@@ -1,4 +1,7 @@
-use painter::{Config, Figure, primitive::ErrorBar};
+use painter::{
+  Config, Figure,
+  primitive::{ErrorBar, ErrorBarType},
+};
 
 fn main() {
   let mut figure = Figure::new(Config::default());
@@ -29,6 +32,7 @@ fn main() {
   // 组F: 实验组5 - 直接指定统计结果（误差范围较小）
   error_bar.set_data_prototype(7.0, 6.8, 7.2); // 平均值7.0，范围6.8-7.2
 
+  error_bar.set_type(ErrorBarType::BaseOnY);
   // 添加error bar到图形
   let ax = figure.nth(0).unwrap();
   ax.add(Box::new(error_bar));
