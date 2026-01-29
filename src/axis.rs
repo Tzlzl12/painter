@@ -3,9 +3,9 @@ use tiny_skia::{Color, Paint, PathBuilder, Pixmap, Rect, Stroke, Transform};
 use crate::{color, drawable::Drawable, text_render::TextRender};
 
 pub struct Axis {
-  pub x: f32,
-  pub y: f32,
-  pub viewport: Rect,
+  x: f32,
+  y: f32,
+  viewport: Rect,
   color_index: usize,
   drawables: Vec<Box<dyn Drawable>>,
 
@@ -92,7 +92,7 @@ impl Axis {
     if y_min <= 0.0 && y_max >= 0.0 {
       self.draw_axis_x(pixmap, ui_ts, actual_w, origin_y);
     }
-    println!("{} {}", x_interval, y_interval);
+    // println!("{} {}", x_interval, y_interval);
   }
   fn draw_grid(&self, pixmap: &mut Pixmap, ts: &Transform, x_int: f32, y_int: f32, w: f32, h: f32) {
     let mut pb = PathBuilder::new();
@@ -358,7 +358,7 @@ impl Axis {
       .pre_translate(-x_min, -y_min);
 
     // 绘制坐标轴：使用 UI 变换
-    self.render_axis(pixmap, &ui_ts, &tr);
+    self.render_axis(pixmap, &ui_ts, tr);
 
     // 绘制数据：使用数据变换
     for drawable in &mut self.drawables {
@@ -390,12 +390,9 @@ pub struct Config {
   y_limit: Option<(f32, f32)>,
   strategy: ScaleStrategy,
 }
+#[derive(Default)]
 pub enum ScaleStrategy {
+  #[default]
   Fit,
   Stretch,
-}
-impl Default for ScaleStrategy {
-  fn default() -> Self {
-    ScaleStrategy::Fit
-  }
 }

@@ -25,7 +25,7 @@ const COLOR_PALETTE: [[u8; 4]; 8] = [
 ];
 
 pub fn get_color(index: usize) -> [u8; 4] {
-  COLOR_PALETTE[index as usize]
+  COLOR_PALETTE[index]
 }
 pub fn get_bg() -> [u8; 4] {
   BG
